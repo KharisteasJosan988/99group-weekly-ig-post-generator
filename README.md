@@ -117,26 +117,6 @@ Instead of returning plain text, the workflow combines all AI-generated outputs 
 
 ---
 
-## Repository Contents
-
-workflow.json
-
-Exported n8n workflow.
-
-prompts.md
-
-All prompts used in the AI nodes.
-
-sample-output.md
-
-Example generated output.
-
-architecture.png
-
-Workflow architecture diagram.
-
----
-
 ## Author
 
 Created as part of the 99 Group AI Technical Assessment.
