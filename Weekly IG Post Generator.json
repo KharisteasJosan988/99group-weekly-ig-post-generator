@@ -1,0 +1,396 @@
+{
+  "name": "Weekly IG Post Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bcf589b8-b34c-4d58-b72c-c88d7e5d501c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=properti+Indonesia",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "4c486002-c18f-4979-a364-b37c34d48713",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "jsCode": "const keywords = [\n\"properti\",\n\"rumah\",\n\"hunian\",\n\"perumahan\",\n\"apartemen\",\n\"kpr\",\n\"mortgage\",\n\"developer\",\n\"real estate\",\n\"cluster\",\n\"subsidi\",\n\"BTN\",\n\"FLPP\"\n];\n\nreturn $input.all().filter((item) => {\nconst text = (\n(item.json.title || \"\") +\n\" \" +\n(item.json.description || \"\") +\n\" \" +\n(item.json.contentSnippet || \"\")\n).toLowerCase();\nreturn keywords.some(keyword =>\ntext.includes(keyword.toLowerCase()));\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ef250d00-1ede-42ba-897a-707d3037dedf",
+      "name": "Filter Property News"
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\n\nreturn $input.all().filter(item => {\n\n  const title = (item.json.title || \"\").trim().toLowerCase();\nif (seen.has(title)) {\nreturn false;\n\n}\n\nseen.add(title);\n\nreturn true;\n\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "38b71fb6-544a-4639-aa99-cba4a834a84f",
+      "name": "Remove Duplicate"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "01b9b19e-b265-4531-91b5-6c52a61f3a58",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a professional news summarizer specializing in Indonesian property news.\n\nYour job is to extract only the most important facts while keeping the information accurate and objective.\n\nNever invent information.\n\nAlways preserve numbers, locations, names, and statistics if they exist."
+            },
+            {
+              "content": "=Summarize the following Indonesian property news.\n\nTitle:\n{{ $json.title }}\n\nContent:\n{{ $json.description }}\n\nRequirements:\n\n- Maximum 80 words\n\n- Written in Indonesian\n\n- Focus only on important information\n\n- Ignore promotional language\n\n- Easy to understand\n\nReturn only the summary."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "a6917da4-ffe9-4113-b4d7-9371ccb42d03",
+      "name": "Summarize Property News",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Social Media Content Writer for Rumah123, Indonesia's leading property platform.\n\nYour writing style is:\n\nProfessional\n\nTrustworthy\n\nFriendly\n\nHelpful\n\nOptimistic\n\nYour audience consists of:\n\nMillennials\n\nFirst-time home buyers\n\nYoung families\n\nYour objective is to educate while increasing engagement.\n\nEvery post should feel informative instead of promotional."
+            },
+            {
+              "content": "=Based on the following property news summary, create ONE Instagram caption.\n\nSummary:\n\n{{ $json.output }}\n\nRequirements:\n\nStart with a strong hook.\n\nExplain the news in simple language.\n\nMention why the news matters for people looking for a house.\n\nEnd with a question to encourage comments.\n\nMaximum 150 words.\n\nDo not use clickbait.\n\nDo not exaggerate.\n\nWrite in Bahasa Indonesia."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "774699e6-d33a-404e-a2d7-a7eb90b1f5b6",
+      "name": "Generate Instagram Caption",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Generate 8 Instagram hashtags.\n\nContext:\n\n{{ Caption }}\n\nRules:\n\nRelevant to Indonesian property.\n\nMix popular and niche hashtags.\n\nNo duplicate hashtags.\n\nOutput hashtags only."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        256
+      ],
+      "id": "26ca7189-a7f1-4a13-ae42-18c89cb85b6d",
+      "name": "Generate Hashtags",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "46752d44-3499-4fed-8a9c-a63bdba906eb",
+              "name": "Title",
+              "value": "={{ $('Limit').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "bb2bbcb3-785c-47eb-807a-dc1d477f1898",
+              "name": "Summary",
+              "value": "={{ $('Summarize Property News').item.json.output[0].content[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "0afa7c98-a60b-4bcd-8d73-f6bbb6161cad",
+              "name": "Caption",
+              "value": "={{ $('Generate Instagram Caption').item.json.output[0].content[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "6f2dba60-1e9e-4ad7-9b13-caceb240ac52",
+              "name": "Hashtags",
+              "value": "={{ $('Generate Hashtags').item.json.output[0].content[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "690140a8-15f1-43a4-887f-f24324b6604f",
+              "name": "Image Prompt",
+              "value": "={{ $('Generate Image Prompt').item.json.output[0].content[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "1246a235-fbec-4a0b-8c3a-735556be9b9d",
+              "name": "Generated at",
+              "value": "={{ $now }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        256
+      ],
+      "id": "040563a4-2893-47fd-bf23-0afe300e5a6a",
+      "name": "Format Final Output"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI image prompt engineer.\n\nYour task is to create highly detailed prompts for AI image generators.\n\nThe image should look realistic, modern, and suitable for an Instagram post by Rumah123.\n\nNever generate text inside the image.\n\nFocus on Indonesian architecture and lifestyle."
+            },
+            {
+              "content": "=Based on this Instagram caption:\n\n{{ Caption }}\n\nCreate one realistic AI image prompt.\n\nRequirements:\n\nModern Indonesian house\n\nBright lighting\n\nYoung family or first home buyer (only if relevant)\n\nProfessional photography\n\nMinimalist aesthetic\n\nInstagram quality\n\nReturn only the image prompt."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        256
+      ],
+      "id": "a2cab91d-98b3-411a-b9da-8986ed11bbb3",
+      "name": "Generate Image Prompt",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Filter Property News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Property News": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Summarize Property News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Property News": {
+      "main": [
+        [
+          {
+            "node": "Generate Instagram Caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Instagram Caption": {
+      "main": [
+        [
+          {
+            "node": "Generate Hashtags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Hashtags": {
+      "main": [
+        [
+          {
+            "node": "Generate Image Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image Prompt": {
+      "main": [
+        [
+          {
+            "node": "Format Final Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "fe6026a1-f0dd-477f-8eb5-66ed5b938ca4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c0149dbc79a2aae8573e40739b22b9ab52b26c53e2bddc4e14fe3424b2611a33"
+  },
+  "nodeGroups": [],
+  "id": "xeCmBfnA8FQRWv4L",
+  "tags": []
+}
